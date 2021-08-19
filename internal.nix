@@ -295,12 +295,15 @@ rec {
     , preInstallLinks ? { } # set that describes which files should be linked in a specific packages folder
     , githubSourceHashMap ? { }
     , passthru ? { }
+    , preInstallCustomCommands ? {}: ""
     , ...
     }@args:
       assert (builtins.typeOf preInstallLinks != "set") ->
-        throw "`preInstallLinks` must be an attributeset of attributesets";
+        throw "[npmlock2nix] `preInstallLinks` must be an attributeset of attributesets";
+      assert (builtins.typeOf preInstallCustomCommands != "lambda") ->
+        throw "[npmlock2nix] `preInstallCustomCommands` must be a function";
       let
-        cleanArgs = builtins.removeAttrs args [ "src" "packageJson" "packageLockJson" "buildInputs" "nativeBuildInputs" "nodejs" "preBuild" "postBuild" "preInstallLinks" "githubSourceHashMap" ];
+        cleanArgs = builtins.removeAttrs args [ "src" "packageJson" "packageLockJson" "buildInputs" "nativeBuildInputs" "nodejs" "preBuild" "postBuild" "preInstallLinks" "preInstallCustomCommands" ];
         lockfile = readLockfile packageLockJson;
 
         preinstall_node_modules = writeTextFile {
@@ -330,6 +333,7 @@ rec {
               #! ${stdenv.shell}
 
               ${preInstallLinkCommands}
+              ${preInstallCustomCommands { }}
 
               if grep -I -q -r '/bin/' .; then
                 source $TMP/preinstall-env

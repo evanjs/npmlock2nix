@@ -92,6 +92,21 @@ npmlock2nix.node_modules {
 Please refer to [bin-wrapped-dep](https://github.com/tweag/npmlock2nix/blob/master/tests/examples-projects/bin-wrapped-dep/shell.nix) for a fully working example.
 
 
+### preInstallCustomCommands
+You can run arbitrary shell operation for given module in given version, using preInstallCustomCommands attribute. Below you see how you can override path to esbuild module, depending on which version in needed.
+This approach may come in handy, if node_modules should have 2 competing versions of the same module.
+```nix
+  buildInputs = [ … ];
+
+  preInstallCustomCommands = {}: ''
+    if [ "$npm_package_name@$npm_package_version" == "esbuild@0.8.57" ]; then
+      sed -i -e 's|process.env.ESBUILD_BINARY_PATH|"${esbuild_0_8_57}/bin/esbuild"|g' ./install.js
+    elif [ "$npm_package_name@$npm_package_version" == "esbuild@0.11.12" ]; then
+      sed -i -e 's|process.env.ESBUILD_BINARY_PATH|"${esbuild_0_11_12}/bin/esbuild"|g' ./install.js
+    fi
+  '';
+```
+
 ### node_modules_mode
 
 _npmlock2nix_ can provide the `node_modules` folder to builds and development environment environments in two different ways as designated by `node_modules_mode`:

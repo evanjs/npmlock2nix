@@ -137,4 +137,23 @@ testLib.runTests {
       expr = builtins.pathExists drv.outPath;
       expected = true;
     };
+  testExecutesPreInstallCustomCommands = {
+    expr =
+      let
+        drv = npmlock2nix.node_modules {
+          src = ./examples-projects/single-dependency;
+          preInstallCustomCommands = {}: ''
+            if [ "$npm_package_name" == "leftpad" ]; then
+              echo -n 'itWorks!' > preInstallCcOutcome
+            fi
+          '';
+        };
+      in
+      builtins.readFile (runCommand "cat file"
+        { } ''
+        cat ${drv}/node_modules/leftpad/preInstallCcOutcome > $out
+      ''
+      );
+    expected = "itWorks!";
+  };
 }
